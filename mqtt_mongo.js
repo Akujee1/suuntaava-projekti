@@ -1,27 +1,25 @@
+// MQTT-välityspalvelimen määrittely
+const mqtt = require('mqtt');
+const broker = 'mqtt://automaatio.cloud.shiftr.io';
+const user = 'automaatio';
+const pw = 'Z0od2PZF65jbtcXu';
 
-//MQTT-välityspalvelimen määrittely
-const mqtt    = require('mqtt');
-const broker = 'mqtt://test.mosquitto.org';
-const user = '';
-const pw = ''; 
-
-//määritellään välityspalvelimen "olio"
-mq = mqtt.connect(broker, {
-  'username': user,
-  'password': pw
+// muodostetaan yhteys MQTT-brokeriin
+const mq = mqtt.connect(broker, {
+  username: user,
+  password: pw
 });
 
-//tilataan oikea topic
-mq.subscribe('automaatio/#');
-
-//liitytään välityspalvelimeen
-mq.on('connect', function(){
-    console.log('Connected.....');
+// tilataan oikea topic
+const topic = 'automaatio2/#';
+mq.on('connect', () => {
+  console.log('Connected.....');
+  mq.subscribe(topic);
 });
 
-//Määritellään tietokanta-API
+// MongoDB-yhteyden määritys
 const { MongoClient, ServerApiVersion } = require('mongodb');
-const uri = "mongodb+srv://eki:eki@cluster0.91fze.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0";
+const uri = "mongodb+srv://aku:aku@aku.1hgkou9.mongodb.net/?retryWrites=true&w=majority&appName=aku";
 const client = new MongoClient(uri, {
   serverApi: {
     version: ServerApiVersion.v1,
@@ -30,21 +28,28 @@ const client = new MongoClient(uri, {
   }
 });
 
-//määritellään tietokannan ja kokoelman nimi sekä dataobjekti sensoridatan käsittelyyn
+// Yhdistetään MongoDB:hen ja määritetään kokoelma
 const myDB = client.db("sensordata2");
 const myColl = myDB.collection("sensordata2");
-var obj;
 
-//odotetaan dataa välityspalvelimelta ja viedään data tietokantaan
-mq.on('message', function(topic, message) {
-  console.log(message.toString('utf8'));
-  obj = JSON.parse(message);
-  console.log(obj.Time, obj.T, obj.H, obj.DP, obj.pCount);
-	myColl.insertOne(obj);
-	console.log(
-	`An entry was inserted successfully`,
-	);
+// MQTT-viestin vastaanotto ja tietokantaan tallennus
+mq.on('message', async (topic, message) => {
+  try {
+    const obj = JSON.parse(message.toString('utf8'));
+
+    // Tulostetaan data siistissä muodossa Herokun lokiin
+    console.log(`\nAika: ${obj.Time}`);
+    console.log(`T: ${obj.T} °C, H: ${obj.H} %, DP: ${obj.DP} °C`);
+    console.log(`CO2: ${obj.CO2} ppm, pCount: ${obj.pCount}`);
+
+    // Tallennetaan tietokantaan
+    await myColl.insertOne(obj);
+    console.log("An entry was inserted successfully");
+  } catch (err) {
+    console.error("Virhe viestin käsittelyssä:", err);
+  }
 });
+
 
 
 
