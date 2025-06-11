@@ -18,7 +18,7 @@ const dataTopic = 'automaatio2/#';
 const toggleTopic = 'automaatio2/saveToggle';
 
 mq.on('connect', () => {
-  console.log('Connected to MQTT broker');
+  console.log('✅ Yhdistetty MQTT-brokeriin');
   mq.subscribe(dataTopic);
   mq.subscribe(toggleTopic);
 });
@@ -44,7 +44,7 @@ mq.on('message', async (topic, message) => {
 
   // Tallennuksen ohjausviesti
   if (topic === toggleTopic) {
-    saveEnabled = (msg === 'on');
+    saveEnabled = (msg === 'true');
     console.log(`\n➡️ Tallennus ${saveEnabled ? 'PÄÄLLÄ' : 'POIS PÄÄLTÄ'}`);
     return;
   }
@@ -67,6 +67,7 @@ mq.on('message', async (topic, message) => {
     console.log("⛔ Data vastaanotettu, mutta tallennus on pois päältä");
   }
 });
+
 
 
 
